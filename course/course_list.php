@@ -171,6 +171,7 @@ $limitClause = "LIMIT $startItem, $perPage";
 $sql = "SELECT * FROM course 
 LEFT JOIN course_instrument_type ON  course_instrument_type.type_id=course.course_instrument_type
 LEFT JOIN course_level ON  course_level.level_id=course.course_level 
+-- 要join老師
 -- LEFT JOIN coffseeker_teachers ON coffseeker_teachers.teacher_id = course.teacher_id
 $whereClause 
 $orderClause
@@ -250,12 +251,15 @@ $allGetStringXV = http_build_query(array_filter($allGetXV));
 
     <div class="container pt-3">
         <div class="p-3 bg-white shadow-sm rounded-2 mb-4">
+        
             <div class="row g-2 align-items-center mb-2">
+                <!-- 此段未更改 -->
                 <?php if (isset($_GET["date"]) || (isset($_GET["user"])) || (isset($_GET["product"]))) : ?>
                     <div class="col-auto">
                         <a class="btn btn-primary" href="order-list.php"><i class="fa-solid fa-circle-chevron-left"></i></a>
                     </div>
                 <?php endif; ?>
+                
                 <div class="col">
                     <h1 class="m-0"><?= isset($_GET["valid"]) ? "【已下架】" : "" ?>課程列表</h1>
                 </div>
@@ -275,26 +279,45 @@ $allGetStringXV = http_build_query(array_filter($allGetXV));
                                     <a class="btn btn-primary" href="order-list.php"><i class="fa-solid fa-circle-chevron-left"></i></a>
                                 </div>
                             <?php endif; ?>
+                            <!-- 此段未更改到這邊 -->
                             <div class="col-3 form-floating">
-                                <input type="courseCode" class="form-control" id="courseCode" placeholder="courseCode" name="courseCode">
-                                <label for="floatingcourseCode">課程代碼</label>
+                                <input type="code" class="form-control" id="code" placeholder="code" name="code">
+                                <label for="floatingCode">課程代碼</label>
                             </div>
                             <div class="col-3 form-floating">
-                                <input type="couponSid" class="form-control" id="couponSid" placeholder="couponSid" name="couponSid">
-                                <label for="floatingCouponSid">優惠券序號</label>
+                                <input type="couponSid" class="form-control" id="teacher" placeholder="teacher" name="teacher">
+                                <label for="floatingTeacher">老師</label>
                             </div>
                             <div class="col-3 form-floating">
                                 <input type="date" class="form-control" name="start" value="<?= $start ?>">
-                                <label for="floatingCouponSid">報名開始日期</label>
+                                <label for="floatingSign">報名開始日期</label>
                             </div>
                             <div class="col-3 form-floating">
                                 <input type="date" class="form-control" name="end" value="<?= $end ?>">
-                                <label for="floatingCouponSid">報名結束日期</label>
+                                <label for="floatingSign">報名結束日期</label>
                             </div>
                         </div>
                         <div class="row g-2 d-flex justify-content-between pt-3 align-items-center">
                             <div class="col-3 form-floating">
-                                <select name="couponState" class="form-select" id="couponState" placeholder="couponState" name="couponState">
+                                <select name="type" class="form-select" id="type" placeholder="type" name="type">
+                                    <option value="所有類別">所有類別</option>
+                                    <option value="小提琴">小提琴</option>
+                                    <option value="中提琴">中提琴</option>
+                                    <option value="大提琴">大提琴</option>
+                                </select>
+                                <label for="floatingType">課程類別</label>
+                            </div>
+                            <div class="col-3 form-floating">
+                                <select name="level" class="form-select" id="level" placeholder="level" name="level">
+                                    <option value="所有類別">所有級別</option>
+                                    <option value="初級">初級</option>
+                                    <option value="中級">中級</option>
+                                    <option value="高級">高級</option>
+                                </select>
+                                <label for="floatingLevel">課程級別</label>
+                            </div>        
+                            <div class="col-3 form-floating">
+                                <select name="state" class="form-select" id="state" placeholder="state" name="state">
                                     <option value="所有狀態">所有狀態</option>
                                     <option value="尚未開始報名">尚未開始報名</option>
                                     <option value="報名開放中">報名開放中</option>
@@ -303,7 +326,7 @@ $allGetStringXV = http_build_query(array_filter($allGetXV));
                                     <option value="開課中">開課中</option>
                                     <option value="已下架">已下架</option>
                                 </select>
-                                <label for="floatingCouponState">課程狀態</label>
+                                <label for="floatingState">課程狀態</label>
                             </div>
                             <div class="col-auto">
                                 <button type="submit" class="btn btn-primary btn-lg">
@@ -327,20 +350,18 @@ $allGetStringXV = http_build_query(array_filter($allGetXV));
             <table class="coupon-table table table-bordered">
                 <thead>
                     <tr>
-                        <th>課程代碼</th>
+                        <th class="text-nowrap">課程代碼</th>
                         <th>上課項目</th>
-                        <th>優惠券序號</th>
-                        <th>數量</th>
-                        <th>發放方式</th>
-                        <th>最低消費</th>
-                        <th>折抵類別</th>
-                        <th>折抵金額</th>
-                        <th>有效開始時間</th>
-                        <th>有效結束時間</th>
-                        <th>優惠券狀態</th>
-                        <th>自動發送時間</th>
-                        <th>活動併用方式</th>
-                        <th>功能項目</th>
+                        <th>課程級別</th>
+                        <th>授課教師</th>
+                        <th>課程價格(堂)</th>
+                        <th>報名人數</th>
+                        <th>上課時間</th>
+                        <th>課堂教室</th>
+                        <th>開課時間</th>
+                        <th>報名截止日</th>
+                        <th>課程狀態</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -348,7 +369,11 @@ $allGetStringXV = http_build_query(array_filter($allGetXV));
                     $total = 0;
                     foreach ($rows as $row) : ?>
                         <tr>
-                            <td><?= $row["id"] ?></td>
+                            <td><?= $row["course_code"] ?></td>
+                            <td><?= $row["type_name"] ?></td>
+                            <td><?= $row["level_name"] ?></td>
+                            <td><a href="?teacher=<?= $row["teacher_id"] ?>"><?= $row["teacher_id"] ?></td>
+                            <td>$<?= $row["course_price"] ?></td>
                             <td><a href="?date=<?= $row["order_date"] ?>"><?= $row["order_date"] ?></a></td>
                             <td><a href="?product=<?= $row["product_id"] ?>"><?= $row["product_name"] ?></a></td>
                             <td class="text-end"><?= number_format($row["price"]) ?></td>
