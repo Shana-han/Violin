@@ -2,16 +2,16 @@
 <?php
 require_once("../db_connect.php");
 
-$whereClause = "WHERE ";
+$whereClause = "";
 
 //顯示刪除課程
-if (isset($_GET["valid"])) {
-    $valid = $_GET["valid"];
-    $whereClause .= " course.course_valid = 2";
-} else {
-    $valid = 1;
-    $whereClause .= " course.course_valid = 1";
-}
+// if (isset($_GET["valid"])) {
+//     $valid = $_GET["valid"];
+//     $whereClause .= " course.course_valid = 1";
+// } else {
+//     $valid = 0;
+//     $whereClause .= " course.course_valid = 0";
+// }
 
 //狀態篩選
 if(isset($_GET["status"])){
@@ -39,6 +39,9 @@ if(isset($_GET["status"])){
         default:
             break;
     }
+}
+if ($whereClause) {
+    $whereClause = "WHERE " . $whereClause;
 }
 //篩選
 //課程代碼
@@ -82,7 +85,7 @@ if (isset($_GET["orderby"])) {
 
     switch ($orderby) {
         case 1:
-            $orderClause .= " course_created_at DESC";
+            $orderClause .= "course_created_at DESC";
             break;
         case 2:
             $orderClause .= "course_registration_start DESC";
@@ -105,46 +108,49 @@ if (isset($_GET["orderby"])) {
     $orderClause .= " course_created_at DESC";
 }
 //無篩選資料計算
-$sqlAll = "SELECT * FROM course WHERE course_valid=$valid";
+$sqlAll = "SELECT * FROM course WHERE course_valid=1";
 $resultAll = $conn->query($sqlAll);
 $countAll = $resultAll->num_rows;
 $now = date("Y-m-d");
 
 //尚未開始報名
-$sqlNotStarted = "SELECT * FROM course WHERE course_valid=$valid AND course_registration_start > '$now'";
+$sqlNotStarted = "SELECT * FROM course WHERE course_valid=1 AND course_registration_start > '$now'";
 $resultNotStarted = $conn->query($sqlNotStarted);
 $countNotStarted = $resultNotStarted->num_rows;
 //報名開放中
-$sqlOpen = "SELECT * FROM course WHERE course_valid=$valid AND course_registration_start <= '$now' AND course_registration_end >= '$now' AND course_student_limit > course_registered_students";
+$sqlOpen = "SELECT * FROM course WHERE course_valid=1 AND course_registration_start <= '$now' AND course_registration_end >= '$now' AND course_student_limit > course_registered_students";
 $resultOpen = $conn->query($sqlOpen);
 $countOpen = $resultOpen->num_rows;
 //報名名額額滿
-$sqlFull = "SELECT * FROM course WHERE course_valid=$valid AND course_registration_start <= '$now' AND course_registration_end >= '$now' AND course_student_limit <= course_registered_students";
+$sqlFull = "SELECT * FROM course WHERE course_valid=1 AND course_registration_start <= '$now' AND course_registration_end >= '$now' AND course_student_limit <= course_registered_students";
 $resultFull = $conn->query($sqlFull);
 $countFull = $resultFull->num_rows;
 //報名截止
-$sqlClose = "SELECT * FROM course WHERE course_valid=$valid AND course_registration_end < '$now'";
+$sqlClose = "SELECT * FROM course WHERE course_valid=1 AND course_registration_end < '$now'";
 $resultClose = $conn->query($sqlClose);
 $countClose = $resultClose->num_rows;
 //課程進行中
-$sqlCoursing = "SELECT * FROM course WHERE course_valid=$valid AND course_start_date <= '$now'";
+$sqlCoursing = "SELECT * FROM course WHERE course_valid=1 AND course_start_date <= '$now'";
 $resultCoursing = $conn->query($sqlCoursing);
 $countCoursing = $resultCoursing->num_rows;
 //課程下架
-$sqlDiscontinued = "SELECT * FROM course WHERE course_valid=$valid AND course_removal_time <= '$now'";
+$sqlDiscontinued = "SELECT * FROM course WHERE course_valid=1 AND course_removal_time <= '$now'";
 $resultDiscontinued = $conn->query($sqlDiscontinued);
 $countDiscontinued = $resultDiscontinued->num_rows;
 
 
 // 總筆數
-$sqlTotal = "SELECT * FROM course 
+$sqlTotal = "SELECT *  FROM course 
 LEFT JOIN course_instrument_type ON  course_instrument_type.type_id=course.course_instrument_type
 LEFT JOIN course_level ON  course_level.level_id=course.course_level 
 -- LEFT JOIN coffseeker_teachers ON coffseeker_teachers.teacher_id = course.teacher_id
 
+
+
 $whereClause 
 $orderClause
 ";
+
 
 // 分頁定義
 $page = $_GET["page"] ?? 1;
@@ -172,7 +178,7 @@ $sql = "SELECT * FROM course
 LEFT JOIN course_instrument_type ON  course_instrument_type.type_id=course.course_instrument_type
 LEFT JOIN course_level ON  course_level.level_id=course.course_level 
 -- 要join老師
--- LEFT JOIN coffseeker_teachers ON coffseeker_teachers.teacher_id = course.teacher_id
+-- LEFT JOIN teachers ON teachers.teacher_id = course.teacher_id
 $whereClause 
 $orderClause
 $limitClause
@@ -180,6 +186,8 @@ $limitClause
 
 $result = $conn->query($sql);
 $rows = $result->fetch_all(MYSQLI_ASSOC);
+
+// var_dump($rows);
 
 // JOIN的資料表們query出來
 $sqlType = "SELECT * FROM course_instrument_type ";
@@ -201,7 +209,7 @@ $allGet = [
     'type' => isset($_GET["type"]) ? $_GET["type"] : null,
     'level' => isset($_GET["level"]) ? $_GET["level"] : null,
     'classroom' => isset($_GET["classroom"]) ? $_GET["classroom"] : null,
-    'valid' => isset($_GET["valid"]) ? $_GET["valid"] : null,
+    'valid' => isset($_GET["valid"]) ? $_GET["valid"] : 1,
     'orderby' => isset($_GET["orderby"]) ? $_GET["orderby"] : null,
     'dateFrom' => isset($_GET["dateFrom"]) ? $_GET["dateFrom"] : null,
     'dateTo' => isset($_GET["dateTo"]) ? $_GET["dateTo"] : null,
@@ -280,6 +288,8 @@ $allGetStringXV = http_build_query(array_filter($allGetXV));
                                 </div>
                             <?php endif; ?>
                             <!-- 此段未更改到這邊 -->
+                            
+                            <!-- 篩選 -->
                             <div class="col-3 form-floating">
                                 <input type="code" class="form-control" id="code" placeholder="code" name="code">
                                 <label for="floatingCode">課程代碼</label>
@@ -332,6 +342,7 @@ $allGetStringXV = http_build_query(array_filter($allGetXV));
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fa-solid fa-magnifying-glass"></i>
                                 </button>
+                               
                                 <button type="submit" class="btn btn-dark btn-lg">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
@@ -341,55 +352,116 @@ $allGetStringXV = http_build_query(array_filter($allGetXV));
                 </div>
             <?php endif; ?>
         </div>
+        <!-- 搜尋結果 -->
+        
+            
+        <!-- 表格 -->
         <div class="p-3 bg-white shadow-sm rounded-2">
-            <div class="mb-3 d-flex justify-content-between align-items-center">
+            <?php if ($totalResult > 0) :
+        ?>
+                <div class="mb-3 d-flex justify-content-between align-items-center">
                 <!-- if上方有輸入文字，則顯示查詢結果 -->
                 <h6 class="m-0">查詢結果</h6>
-                <a class="btn btn-primary" href="create_course.php">新增</a>
-            </div>
-            <table class="coupon-table table table-bordered">
+                <a class="btn btn-primary" href="create-course.php"><i class="fa-solid fa-plus"></i> 新增</a>
+                </div>
+            <div class="table-responsive">
+            <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th class="text-nowrap">課程代碼</th>
-                        <th>上課項目</th>
-                        <th>課程級別</th>
-                        <th>授課教師</th>
-                        <th>課程價格(堂)</th>
-                        <th>報名人數</th>
-                        <th>上課時間</th>
-                        <th>課堂教室</th>
-                        <th>開課時間</th>
-                        <th>報名截止日</th>
-                        <th>課程狀態</th>
-                        <th>操作</th>
+                        <th width="300">課程代碼</th>
+                        <th width="300">上課項目</th>
+                        <th width="300">課程級別</th>
+                        <th width="300">授課教師</th>
+                        <th width="300">課程價格(堂)</th>
+                        <th width="300">報名人數</th>
+                        <th width="300">上課時間</th>
+                        <th width="300">課堂教室</th>
+                        <th width="300">開課時間</th>
+                        <th width="300">報名截止日</th>
+                        <th width="300">課程狀態</th>
+                        <th width="300">操作</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php
-                    $total = 0;
+                    
                     foreach ($rows as $row) : ?>
                         <tr>
                             <td><?= $row["course_code"] ?></td>
                             <td><?= $row["type_name"] ?></td>
                             <td><?= $row["level_name"] ?></td>
+                             <!-- 以下教師需要連結會員 -->
                             <td><a href="?teacher=<?= $row["teacher_id"] ?>"><?= $row["teacher_id"] ?></td>
-                            <td>$<?= $row["course_price"] ?></td>
-                            <td><a href="?date=<?= $row["order_date"] ?>"><?= $row["order_date"] ?></a></td>
-                            <td><a href="?product=<?= $row["product_id"] ?>"><?= $row["product_name"] ?></a></td>
-                            <td class="text-end"><?= number_format($row["price"]) ?></td>
-                            <td class="text-end"><?= $row["amount"] ?></td>
-                            <td><a href="?user=<?= $row["user_id"] ?>"><?= $row["user_name"] ?></a></td>
-                            <?php
-                            $subtotal = $row["price"] * $row["amount"];
-                            $total += $subtotal;
-                            ?>
-                            <td class="text-end"><?= number_format($subtotal) ?></td>
+                            <td class="text-end">$<?= number_format($row["course_price"] )?></td>
+                            <!-- 以下報名人數也需要連結會員 -->
+                            <td><?= $row["course_registered_students"] ?></td>
+                            <td>每周<?= $row["course_weekday"] ?><br><?= $row["course_start_time"] ?>~<?= $row["course_end_time"] ?></td>
+                            <td><?= $row["course_room_number"] ?></td>
+                            <td><?= $row["course_start_date"] ?></td>
+                            <td><?= $row["course_registration_end"] ?></td>
+                            <td><?php 
+                                    if ($row["course_registration_start"] > date("Y-m-d")) {
+                                            echo "報名<br>尚未開始";
+                                        } elseif ($row["course_registration_start"] <= date("Y-m-d") && $row["course_registration_end"] >= date("Y-m-d") && $row["course_student_limit"] >$row["course_registered_students"]){
+                                            echo "報名<br>開放中";
+                                        } elseif ($row["course_registration_start"] <= date("Y-m-d") && $row["course_registration_end"] >= date("Y-m-d") && $row["course_student_limit"] <= $row["course_registered_students"]) {
+                                            echo "報名<br>已額滿";
+                                        } elseif ($row["ourse_registration_end"] < date("Y-m-d")) {
+                                            echo "報名<br>已截止";
+                                        } elseif ($row["course_start_date"] <= date("Y-m-d") && $row["course_removal_time"] > date("Y-m-d") ) {
+                                            echo "課程<br>進行中";
+                                        } elseif($row["course_removal_time"] < date("Y-m-d")) {
+                                            echo "課程<br>已下架";
+                                        }
+                                        ?></td>
+
+                            <td>
+                                <div class="d-flex">
+                                    
+                                <button type="button" class="ViewCourseBtn btn" data-id="<?= $row["course_id"] ?>" data-bs-toggle="modal" data-bs-target="#EditCourseModal" title="檢視"><i class="fa-solid fa-eye"></i></button>
+                                
+                                <a href="course-edit.php?id=<?=$row["course_id"]?>"><button class="editCourseBtn btn" data-id="<?= $row["course_id"] ?>" title="編輯"><i class="fa-solid fa-pen-to-square"></i></button></a>   
+                                                               
+                                <button  type="button" data-id="<?= $row["course_id"] ?>" class="deleteCourseBtn btn" data-bs-toggle="modal" data-bs-target="#deleteCourseModal" title="刪除"><i class=" fa-solid fa-trash"></i></button>
+                                
+                                </div>
+                            </td>                    
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <div class="text-end">
-                總計：<?= number_format($total) ?>
+            </div>
+            <div class="total-page">
+                <p class="text-center text-secondary">
+                    共 <?= $totalResult ?> 筆，第 <?= $page ?> 頁，共 <?= $totalPage ?> 頁
+                </p>
+            </div>
+            <!-- 頁碼 -->
+            <div class="mb-3">
+                    <nav aria-label="Page-navigation" class=" d-flex justify-content-center">
+                        <div class="btn-group  ">
+
+                            <a type="button" class="btn btn-outline-secondary  <?php if ($page < 2) echo "disabled" ?>" href="course_list.php?<?= $allGetString . "&" ?>page=<?= $page - 1 ?>"><i class="fa-solid fa-caret-left"></i></a>
+
+
+                            <?php for ($i = 1; $i <= $totalPage; $i++) : ?>
+
+                                <a class="btn btn-outline-secondary <?= ($i == $page) ? "active" : "" ?>" href="course_list.php?<?= $allGetString . "&" ?>page=<?= $i ?>"><?= $i ?></a>
+
+                            <?php endfor; ?>
+
+
+                            <a type="button" class="btn btn-outline-secondary    <?php if ($page >= $totalPage) echo "disabled" ?>" href="course_list.php?<?= $allGetString . "&" ?>page=<?= $page + 1 ?>"><i class="fa-solid fa-caret-right"></i></a>
+
+
+
+                        </div>
+                    </nav>
+                </div>
+                
+            <?php else : ?> 
+                <h2 class="text-center mt-5">查無資料，請重新設定篩選條件</h2>       
+            <?php endif; ?>
             </div>
         </div>
 
